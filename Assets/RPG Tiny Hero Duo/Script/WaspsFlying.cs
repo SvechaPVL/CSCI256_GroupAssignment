@@ -3,10 +3,13 @@ using UnityEngine.AI;
 
 public class WaspFlying : MonoBehaviour
 {
+    [Header("Attack Damage")]
+    public int AttackDamage = 10; 
 
     private NavMeshAgent m_agent;
     private Animator m_animator;
     private Transform m_target;
+    
 
     // Override the NavMesh agent's speed
     public float MoveSpeed;
@@ -90,6 +93,23 @@ public class WaspFlying : MonoBehaviour
             if (m_agent.baseOffset >= MaxHeight)
             {
                 m_isAscending = false;
+            }
+        }
+    }
+
+    public void ApplyDamageToPlayer()
+    {
+        
+        if (m_distanceToPlayer <= AttackDistance + m_agent.baseOffset + 0.5f)
+        {
+            // Connect player Health
+            PlayerHealth playerHealth = m_target.GetComponent<PlayerHealth>();
+
+            if (playerHealth != null)
+            {
+                // Apply Damage
+                playerHealth.TakeDamage(AttackDamage);
+                Debug.Log($"Wasp damaged {AttackDamage} ");
             }
         }
     }

@@ -236,34 +236,26 @@ public class PlayerMovement_MaleWarrior : MonoBehaviour
     // 실제 공격 판정 로직 (코드 중복 방지)
     private void PerformHitCheck(int damage, float radius, Vector3 offset)
     {
-        Vector3 center = transform.position + offset;
+        Debug.Log($"<color=yellow>공격 판정 시도: Radius={radius}, Damage={damage}</color>");
 
-        Debug.Log($"<color=yellow>공격 판정 시도: Center={center}, Radius={radius}, Damage={damage}</color>");
-
+        // Physics.OverlapSphere를 사용하여 범위 내의 적 감지
         Collider[] hitEnemies = Physics.OverlapSphere(
-            center,
-            radius,
+            transform.position + offset, // 플레이어 위치 + 오프셋
+            radius, // 판정 반경
             enemyLayer // 적 Layer만 감지
         );
 
         Debug.Log($"<color=cyan>감지된 적 개수: {hitEnemies.Length}</color>");
 
-        foreach (Collider enemyCollider in hitEnemies)
+        foreach (Collider enemy in hitEnemies)
         {
-            // ✅ 적이 여러 Child에 Collider가 있을 수 있으니, 부모에서 EnemyHealth 찾기
-            EnemyHealth enemyHealth = enemyCollider.GetComponentInParent<EnemyHealth>();
-
+            EnemyHealth enemyHealth = enemy.GetComponent<EnemyHealth>();
             if (enemyHealth != null)
             {
-                Debug.Log($"<color=red>SUCCESS: {enemyCollider.name} 에게 {damage} 피해 적용!</color>");
+                Debug.Log($"<color=red>SUCCESS: {enemy.name} 에게 {damage} 피해 적용!</color>");
                 enemyHealth.TakeDamage(damage);
-            }
-            else
-            {
-                Debug.Log($"<color=grey>EnemyHealth 없음: {enemyCollider.name}</color>");
             }
         }
     }
-
 
 }

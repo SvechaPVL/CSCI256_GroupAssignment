@@ -19,26 +19,52 @@ public class ShopUICreator : EditorWindow
 
     private void OnGUI()
     {
-        GUILayout.Label("Shop UI Creator", EditorStyles.boldLabel);
+        GUILayout.Label("Shop System Creator", EditorStyles.boldLabel);
         GUILayout.Space(10);
 
-        EditorGUILayout.HelpBox("This will create complete Shop UI structure in your scene:\n" +
-            "- Canvas\n" +
-            "- ShopPanel with all elements\n" +
-            "- PromptPanel\n" +
-            "- Item Card Prefab\n" +
-            "- Detail Panel", MessageType.Info);
+        EditorGUILayout.HelpBox("Automatically create the entire shop system!\n\n" +
+            "✨ ONE-CLICK COMPLETE SETUP:\n" +
+            "- UI (Canvas, panels, prefabs)\n" +
+            "- ShopManager (with all references)\n" +
+            "- ShopTrigger (ready to use)\n\n" +
+            "Or create components individually below.", MessageType.Info);
 
         GUILayout.Space(10);
 
-        if (GUILayout.Button("CREATE COMPLETE SHOP UI", GUILayout.Height(40)))
+        // MEGA BUTTON - Create everything!
+        GUI.backgroundColor = new Color(0.2f, 0.8f, 0.2f);
+        if (GUILayout.Button("🚀 CREATE COMPLETE SHOP SYSTEM 🚀", GUILayout.Height(50)))
+        {
+            CreateCompleteShopSystem();
+        }
+        GUI.backgroundColor = Color.white;
+
+        GUILayout.Space(15);
+        GUILayout.Label("Individual Components:", EditorStyles.boldLabel);
+        GUILayout.Space(5);
+
+        if (GUILayout.Button("Create Shop UI (Canvas + Panels)", GUILayout.Height(35)))
         {
             CreateCompleteShopUI();
         }
 
+        GUILayout.Space(5);
+
+        if (GUILayout.Button("Create Shop Manager (with auto-references)", GUILayout.Height(35)))
+        {
+            CreateShopManager();
+        }
+
+        GUILayout.Space(5);
+
+        if (GUILayout.Button("Create Shop Trigger (in scene)", GUILayout.Height(35)))
+        {
+            CreateShopTrigger();
+        }
+
         GUILayout.Space(10);
 
-        if (GUILayout.Button("Create Only Item Card Prefab", GUILayout.Height(30)))
+        if (GUILayout.Button("Create Only Item Card Prefab", GUILayout.Height(25)))
         {
             CreateItemCardPrefab();
         }
@@ -470,6 +496,264 @@ public class ShopUICreator : EditorWindow
 
         GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
         EditorGUIUtility.PingObject(prefab);
+    }
+
+    // ============================================
+    // NEW METHODS FOR COMPLETE AUTOMATION
+    // ============================================
+
+    private void CreateCompleteShopSystem()
+    {
+        Debug.Log("[ShopUICreator] 🚀 Creating COMPLETE Shop System...");
+
+        // 1. Create UI
+        CreateCompleteShopUI();
+
+        // Small delay to ensure UI is created
+        EditorApplication.delayCall += () =>
+        {
+            // 2. Create ShopManager
+            CreateShopManager();
+
+            // 3. Create ShopTrigger
+            CreateShopTrigger();
+
+            Debug.Log("✅ [ShopUICreator] COMPLETE Shop System created!");
+            EditorUtility.DisplayDialog("Success! 🎉",
+                "Complete Shop System has been created!\n\n" +
+                "Created:\n" +
+                "✅ Shop UI (Canvas, panels, prefab)\n" +
+                "✅ ShopManager (with auto-references)\n" +
+                "✅ ShopTrigger (in scene)\n\n" +
+                "Next steps:\n" +
+                "1. Assign shop items to ShopManager\n" +
+                "2. Assign Player to ShopManager\n" +
+                "3. Position ShopTrigger in scene\n" +
+                "4. Test in Play mode!", "Awesome!");
+        };
+    }
+
+    private void CreateShopManager()
+    {
+        Debug.Log("[ShopUICreator] Creating ShopManager...");
+
+        // Check if ShopManager already exists
+        ShopManager existingManager = FindObjectOfType<ShopManager>();
+        if (existingManager != null)
+        {
+            bool replace = EditorUtility.DisplayDialog("ShopManager Exists",
+                "ShopManager already exists in the scene. Replace it?",
+                "Replace", "Cancel");
+
+            if (!replace) return;
+
+            DestroyImmediate(existingManager.gameObject);
+        }
+
+        // Create ShopManager GameObject
+        GameObject managerObj = new GameObject("ShopManager");
+        ShopManager manager = managerObj.AddComponent<ShopManager>();
+
+        // Find UI elements
+        Canvas canvas = FindObjectOfType<Canvas>();
+        if (canvas != null)
+        {
+            // Try to find and assign UI references
+            GameObject shopPanel = FindChildByName(canvas.transform, "ShopPanel");
+            GameObject promptPanel = FindChildByName(canvas.transform, "PromptPanel");
+
+            if (shopPanel != null && promptPanel != null)
+            {
+                SerializedObject so = new SerializedObject(manager);
+
+                // Shop UI
+                so.FindProperty("shopUI").objectReferenceValue = shopPanel;
+
+                // Prompt UI
+                so.FindProperty("promptUI").objectReferenceValue = promptPanel;
+                GameObject promptText = FindChildByName(promptPanel.transform, "PromptText");
+                if (promptText != null)
+                {
+                    so.FindProperty("promptText").objectReferenceValue = promptText.GetComponent<TextMeshProUGUI>();
+                }
+
+                // Item Cards Container
+                GameObject content = FindDeepChild(shopPanel.transform, "Content");
+                if (content != null)
+                {
+                    so.FindProperty("itemCardsContainer").objectReferenceValue = content.transform;
+                }
+
+                // Item Card Prefab
+                GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Shop/ItemCardPrefab.prefab");
+                if (prefab != null)
+                {
+                    so.FindProperty("itemCardPrefab").objectReferenceValue = prefab;
+                }
+
+                // Detail Panel
+                GameObject detailPanel = FindChildByName(shopPanel.transform, "DetailPanel");
+                if (detailPanel != null)
+                {
+                    so.FindProperty("detailPanel").objectReferenceValue = detailPanel;
+
+                    GameObject container = FindChildByName(detailPanel.transform, "Container");
+                    if (container != null)
+                    {
+                        AssignDetailPanelReferences(so, container.transform);
+                    }
+                }
+
+                // Currency Text
+                GameObject currencyText = FindDeepChild(shopPanel.transform, "CurrencyText");
+                if (currencyText != null)
+                {
+                    so.FindProperty("currencyText").objectReferenceValue = currencyText.GetComponent<TextMeshProUGUI>();
+                }
+
+                so.ApplyModifiedProperties();
+
+                Debug.Log("✓ ShopManager created and UI references assigned automatically!");
+            }
+            else
+            {
+                Debug.LogWarning("⚠ UI elements not found. Create UI first or assign references manually.");
+            }
+        }
+        else
+        {
+            Debug.LogWarning("⚠ Canvas not found. Create UI first.");
+        }
+
+        // Try to find and assign player
+        GameObject player = GameObject.FindGameObjectWithTag("Player");
+        if (player != null)
+        {
+            SerializedObject so = new SerializedObject(manager);
+            so.FindProperty("player").objectReferenceValue = player;
+            so.ApplyModifiedProperties();
+            Debug.Log($"✓ Player assigned automatically: {player.name}");
+        }
+        else
+        {
+            Debug.LogWarning("⚠ Player not found (missing 'Player' tag). Assign manually.");
+        }
+
+        Selection.activeGameObject = managerObj;
+        Debug.Log("✓ ShopManager created successfully!");
+    }
+
+    private void CreateShopTrigger()
+    {
+        Debug.Log("[ShopUICreator] Creating ShopTrigger...");
+
+        // Create trigger cube
+        GameObject trigger = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        trigger.name = "ShopTrigger";
+
+        // Position near origin (user can move it)
+        trigger.transform.position = new Vector3(5, 0, 0);
+        trigger.transform.localScale = new Vector3(3, 3, 3);
+
+        // Setup collider
+        BoxCollider collider = trigger.GetComponent<BoxCollider>();
+        if (collider != null)
+        {
+            collider.isTrigger = true;
+        }
+
+        // Add ShopTrigger component
+        ShopTrigger triggerScript = trigger.AddComponent<ShopTrigger>();
+
+        // Try to assign ShopManager
+        ShopManager manager = FindObjectOfType<ShopManager>();
+        if (manager != null)
+        {
+            SerializedObject so = new SerializedObject(triggerScript);
+            so.FindProperty("shopManager").objectReferenceValue = manager;
+            so.ApplyModifiedProperties();
+            Debug.Log("✓ ShopManager reference assigned automatically!");
+        }
+        else
+        {
+            Debug.LogWarning("⚠ ShopManager not found. Create it first or assign manually.");
+        }
+
+        // Add a visual indicator material (optional)
+        Renderer renderer = trigger.GetComponent<Renderer>();
+        if (renderer != null)
+        {
+            Material mat = new Material(Shader.Find("Standard"));
+            mat.color = new Color(0.2f, 0.8f, 0.2f, 0.5f);
+            mat.SetFloat("_Mode", 3); // Transparent mode
+            mat.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
+            mat.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+            mat.SetInt("_ZWrite", 0);
+            mat.DisableKeyword("_ALPHATEST_ON");
+            mat.EnableKeyword("_ALPHABLEND_ON");
+            mat.DisableKeyword("_ALPHAPREMULTIPLY_ON");
+            mat.renderQueue = 3000;
+            renderer.material = mat;
+        }
+
+        Selection.activeGameObject = trigger;
+        Debug.Log("✓ ShopTrigger created! Position it where you want the shop to be.");
+        EditorGUIUtility.PingObject(trigger);
+    }
+
+    // Helper methods
+    private GameObject FindChildByName(Transform parent, string name)
+    {
+        foreach (Transform child in parent)
+        {
+            if (child.name == name)
+                return child.gameObject;
+        }
+        return null;
+    }
+
+    private GameObject FindDeepChild(Transform parent, string name)
+    {
+        foreach (Transform child in parent)
+        {
+            if (child.name == name)
+                return child.gameObject;
+
+            GameObject result = FindDeepChild(child, name);
+            if (result != null)
+                return result;
+        }
+        return null;
+    }
+
+    private void AssignDetailPanelReferences(SerializedObject so, Transform container)
+    {
+        foreach (Transform child in container)
+        {
+            switch (child.name)
+            {
+                case "ItemName":
+                    so.FindProperty("detailName").objectReferenceValue = child.GetComponent<TextMeshProUGUI>();
+                    break;
+                case "ItemDescription":
+                    so.FindProperty("detailDescription").objectReferenceValue = child.GetComponent<TextMeshProUGUI>();
+                    break;
+                case "ItemPrice":
+                    so.FindProperty("detailPrice").objectReferenceValue = child.GetComponent<TextMeshProUGUI>();
+                    break;
+                case "ItemStock":
+                    so.FindProperty("detailStock").objectReferenceValue = child.GetComponent<TextMeshProUGUI>();
+                    break;
+                case "BuyButton":
+                    so.FindProperty("buyButton").objectReferenceValue = child.GetComponent<Button>();
+                    Transform buttonText = child.Find("Text");
+                    if (buttonText != null)
+                    {
+                        so.FindProperty("buyButtonText").objectReferenceValue = buttonText.GetComponent<TextMeshProUGUI>();
+                    }
+                    break;
+            }
+        }
     }
 }
 #endif

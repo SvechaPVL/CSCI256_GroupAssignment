@@ -39,6 +39,27 @@ public class ShopUICreator : EditorWindow
         }
         GUI.backgroundColor = Color.white;
 
+        GUILayout.Space(10);
+
+        // DELETE & RECREATE BUTTON
+        GUI.backgroundColor = new Color(1f, 0.6f, 0.2f);
+        if (GUILayout.Button("🔄 DELETE & RECREATE UI (Fix Issues)", GUILayout.Height(40)))
+        {
+            if (EditorUtility.DisplayDialog("Delete and Recreate UI?",
+                "This will DELETE existing UI and create fresh one!\n\n" +
+                "Will delete:\n" +
+                "- Canvas/ShopPanel (or entire Canvas if no other children)\n" +
+                "- ItemCardPrefab\n\n" +
+                "Then create everything from scratch.\n\n" +
+                "Continue?",
+                "Yes, Delete & Recreate",
+                "Cancel"))
+            {
+                DeleteAndRecreateUI();
+            }
+        }
+        GUI.backgroundColor = Color.white;
+
         GUILayout.Space(15);
         GUILayout.Label("Individual Components:", EditorStyles.boldLabel);
         GUILayout.Space(5);
@@ -68,6 +89,22 @@ public class ShopUICreator : EditorWindow
         {
             CreateItemCardPrefab();
         }
+
+        GUILayout.Space(5);
+
+        GUI.backgroundColor = new Color(1f, 0.5f, 0.5f);
+        if (GUILayout.Button("🔄 Recreate Item Card Prefab", GUILayout.Height(25)))
+        {
+            if (EditorUtility.DisplayDialog("Recreate Item Card Prefab?",
+                "This will DELETE existing ItemCardPrefab and create a NEW one with LayoutElement.\n\n" +
+                "Continue?",
+                "Yes, Recreate",
+                "Cancel"))
+            {
+                RecreateItemCardPrefab();
+            }
+        }
+        GUI.backgroundColor = Color.white;
     }
 
     private void CreateCompleteShopUI()
@@ -81,16 +118,42 @@ public class ShopUICreator : EditorWindow
 
         Debug.Log("[ShopUICreator] Creating complete Shop UI...");
 
-        // 1. Create or find Canvas
-        Canvas canvas = FindObjectOfType<Canvas>();
+        // 1. Find or create PlayerUI parent object
+        GameObject playerUI = GameObject.Find("PlayerUI");
+        if (playerUI == null)
+        {
+            playerUI = new GameObject("PlayerUI");
+            Debug.Log("✓ Created PlayerUI parent object");
+        }
+        else
+        {
+            Debug.Log("✓ Found existing PlayerUI");
+        }
+
+        // 2. Create or find Canvas (inside PlayerUI or root)
+        Canvas canvas = null;
+        Canvas[] allCanvases = FindObjectsOfType<Canvas>();
+        foreach (Canvas c in allCanvases)
+        {
+            // Find UI Canvas (not WorldSpace, not on NPCs)
+            if (c.renderMode == RenderMode.ScreenSpaceOverlay ||
+                (c.transform.parent != null && c.transform.parent.name == "PlayerUI") ||
+                c.transform.parent == null)
+            {
+                canvas = c;
+                break;
+            }
+        }
+
         if (canvas == null)
         {
             GameObject canvasObj = new GameObject("Canvas");
+            canvasObj.transform.SetParent(playerUI.transform, false);
             canvas = canvasObj.AddComponent<Canvas>();
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
             canvasObj.AddComponent<CanvasScaler>();
             canvasObj.AddComponent<GraphicRaycaster>();
-            Debug.Log("✓ Created Canvas");
+            Debug.Log("✓ Created Canvas inside PlayerUI");
 
             // Create EventSystem if needed
             if (FindObjectOfType<EventSystem>() == null)
@@ -103,7 +166,26 @@ public class ShopUICreator : EditorWindow
         }
         else
         {
-            Debug.Log("✓ Using existing Canvas");
+            Debug.Log("✓ Found existing Canvas - FORCING ScreenSpaceOverlay mode");
+            // CRITICAL: Force correct render mode
+            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+
+            // Move Canvas to PlayerUI if not already
+            if (canvas.transform.parent != playerUI.transform)
+            {
+                canvas.transform.SetParent(playerUI.transform, false);
+                Debug.Log("✓ Moved Canvas into PlayerUI");
+            }
+
+            // Ensure has required components
+            if (canvas.GetComponent<CanvasScaler>() == null)
+            {
+                canvas.gameObject.AddComponent<CanvasScaler>();
+            }
+            if (canvas.GetComponent<GraphicRaycaster>() == null)
+            {
+                canvas.gameObject.AddComponent<GraphicRaycaster>();
+            }
         }
 
         // Setup Canvas Scaler
@@ -263,10 +345,11 @@ public class ShopUICreator : EditorWindow
         VerticalLayoutGroup layout = content.AddComponent<VerticalLayoutGroup>();
         layout.spacing = 10;
         layout.padding = new RectOffset(10, 10, 10, 10);
-        layout.childControlHeight = false;
+        layout.childControlHeight = true;  // CHANGED: Enable height control
         layout.childControlWidth = true;
         layout.childForceExpandHeight = false;
         layout.childForceExpandWidth = true;
+        layout.childAlignment = TextAnchor.UpperCenter;
 
         ContentSizeFitter fitter = content.AddComponent<ContentSizeFitter>();
         fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
@@ -446,7 +529,13 @@ public class ShopUICreator : EditorWindow
         GameObject itemCard = new GameObject("ItemCard");
 
         RectTransform cardRect = itemCard.AddComponent<RectTransform>();
-        cardRect.sizeDelta = new Vector2(400, 100);
+        // CRITICAL: Set anchors for VerticalLayoutGroup compatibility
+        cardRect.anchorMin = new Vector2(0, 1);
+        cardRect.anchorMax = new Vector2(1, 1);
+        cardRect.pivot = new Vector2(0.5f, 1f);
+        cardRect.sizeDelta = new Vector2(0, 100); // Width will stretch, height fixed at 100
+
+        Debug.Log($"[ShopUICreator] ItemCard RectTransform created - AnchorMin: {cardRect.anchorMin}, AnchorMax: {cardRect.anchorMax}, Pivot: {cardRect.pivot}, SizeDelta: {cardRect.sizeDelta}");
 
         // ЯРКИЙ ВИДИМЫЙ ФОН КАРТОЧКИ!
         Image cardImage = itemCard.AddComponent<Image>();
@@ -553,6 +642,13 @@ public class ShopUICreator : EditorWindow
         stockTMP.alignment = TextAlignmentOptions.Center;
         stockTMP.color = new Color(0.9f, 0.9f, 0.9f, 1f); // ЯРКИЙ светло-серый
 
+        // Add Layout Element for proper sizing in ScrollView
+        LayoutElement layoutElement = itemCard.AddComponent<LayoutElement>();
+        layoutElement.preferredHeight = 100;
+        layoutElement.minHeight = 100;
+        layoutElement.preferredWidth = 400; // CRITICAL: Set preferred width for ContentSizeFitter
+        layoutElement.flexibleWidth = 1; // Allow stretching to fill container
+
         // Assign references to ShopItemCard
         ShopItemCard cardScript = itemCard.GetComponent<ShopItemCard>();
         SerializedObject so = new SerializedObject(cardScript);
@@ -591,8 +687,10 @@ public class ShopUICreator : EditorWindow
             "- BRIGHT gold price with shadow\n" +
             "- Visible gray placeholder for icon\n" +
             "- Hover effects on mouse over\n" +
-            "- Text shadows for readability\n\n" +
-            "Cards are NO LONGER transparent!", "OK");
+            "- Text shadows for readability\n" +
+            "- Layout Element for ScrollView (Height: 100)\n\n" +
+            "Cards are NO LONGER transparent!\n" +
+            "Cards will now display properly in ScrollView!", "OK");
     }
 
     // ============================================
@@ -651,93 +749,12 @@ public class ShopUICreator : EditorWindow
         GameObject managerObj = new GameObject("ShopManager");
         ShopManager manager = managerObj.AddComponent<ShopManager>();
 
-        // Find UI elements
-        Canvas canvas = FindObjectOfType<Canvas>();
-        if (canvas != null)
-        {
-            // Try to find and assign UI references
-            GameObject shopPanel = FindChildByName(canvas.transform, "ShopPanel");
-            GameObject promptPanel = FindChildByName(canvas.transform, "PromptPanel");
-
-            if (shopPanel != null && promptPanel != null)
-            {
-                SerializedObject so = new SerializedObject(manager);
-
-                // Shop UI
-                so.FindProperty("shopUI").objectReferenceValue = shopPanel;
-
-                // Prompt UI
-                so.FindProperty("promptUI").objectReferenceValue = promptPanel;
-                GameObject promptText = FindChildByName(promptPanel.transform, "PromptText");
-                if (promptText != null)
-                {
-                    so.FindProperty("promptText").objectReferenceValue = promptText.GetComponent<TextMeshProUGUI>();
-                }
-
-                // Item Cards Container
-                GameObject content = FindDeepChild(shopPanel.transform, "Content");
-                if (content != null)
-                {
-                    so.FindProperty("itemCardsContainer").objectReferenceValue = content.transform;
-                }
-
-                // Item Card Prefab
-                GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Shop/ItemCardPrefab.prefab");
-                if (prefab != null)
-                {
-                    so.FindProperty("itemCardPrefab").objectReferenceValue = prefab;
-                }
-
-                // Detail Panel
-                GameObject detailPanel = FindChildByName(shopPanel.transform, "DetailPanel");
-                if (detailPanel != null)
-                {
-                    so.FindProperty("detailPanel").objectReferenceValue = detailPanel;
-
-                    GameObject container = FindChildByName(detailPanel.transform, "Container");
-                    if (container != null)
-                    {
-                        AssignDetailPanelReferences(so, container.transform);
-                    }
-                }
-
-                // Currency Text
-                GameObject currencyText = FindDeepChild(shopPanel.transform, "CurrencyText");
-                if (currencyText != null)
-                {
-                    so.FindProperty("currencyText").objectReferenceValue = currencyText.GetComponent<TextMeshProUGUI>();
-                }
-
-                so.ApplyModifiedProperties();
-
-                Debug.Log("✓ ShopManager created and UI references assigned automatically!");
-            }
-            else
-            {
-                Debug.LogWarning("⚠ UI elements not found. Create UI first or assign references manually.");
-            }
-        }
-        else
-        {
-            Debug.LogWarning("⚠ Canvas not found. Create UI first.");
-        }
-
-        // Try to find and assign player
-        GameObject player = GameObject.FindGameObjectWithTag("Player");
-        if (player != null)
-        {
-            SerializedObject so = new SerializedObject(manager);
-            so.FindProperty("player").objectReferenceValue = player;
-            so.ApplyModifiedProperties();
-            Debug.Log($"✓ Player assigned automatically: {player.name}");
-        }
-        else
-        {
-            Debug.LogWarning("⚠ Player not found (missing 'Player' tag). Assign manually.");
-        }
+        // Auto-assign all references
+        Debug.Log("[ShopUICreator] Auto-assigning references to ShopManager...");
+        AutoAssignShopManagerReferences(manager);
 
         Selection.activeGameObject = managerObj;
-        Debug.Log("✓ ShopManager created successfully!");
+        Debug.Log("✓ ShopManager created successfully with all references!");
     }
 
     private void CreateShopTrigger()
@@ -851,6 +868,255 @@ public class ShopUICreator : EditorWindow
                     break;
             }
         }
+    }
+
+    // ============================================
+    // RECREATE METHODS
+    // ============================================
+
+    private void RecreateItemCardPrefab()
+    {
+        Debug.Log("[ShopUICreator] ===== RECREATING ITEM CARD PREFAB =====");
+
+        // Delete existing prefab
+        string prefabPath = "Assets/Prefabs/Shop/ItemCardPrefab.prefab";
+        if (AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath) != null)
+        {
+            Debug.Log("[ShopUICreator] Deleting existing ItemCardPrefab...");
+            AssetDatabase.DeleteAsset(prefabPath);
+            Debug.Log("✓ Deleted old ItemCardPrefab");
+        }
+
+        AssetDatabase.Refresh();
+
+        // Create new prefab
+        Debug.Log("[ShopUICreator] Creating new ItemCardPrefab with LayoutElement...");
+        CreateItemCardPrefab();
+
+        EditorUtility.DisplayDialog("Success!",
+            "ItemCardPrefab recreated!\n\n" +
+            "New prefab includes:\n" +
+            "- LayoutElement (Height: 100)\n" +
+            "- All visual improvements\n" +
+            "- Proper sizing for ScrollView\n\n" +
+            "Don't forget to reassign it in ShopManager!", "OK");
+
+        Debug.Log("[ShopUICreator] ===== RECREATION COMPLETE =====");
+    }
+
+    private void DeleteAndRecreateUI()
+    {
+        Debug.Log("[ShopUICreator] ===== DELETING OLD UI =====");
+
+        // 1. Delete shop UI elements from PlayerUI/Canvas (but keep PlayerUI and Canvas)
+        GameObject playerUI = GameObject.Find("PlayerUI");
+        Canvas canvas = null;
+
+        if (playerUI != null)
+        {
+            canvas = playerUI.GetComponentInChildren<Canvas>();
+        }
+
+        if (canvas == null)
+        {
+            // Search for any ScreenSpaceOverlay Canvas
+            Canvas[] allCanvases = FindObjectsOfType<Canvas>();
+            foreach (Canvas c in allCanvases)
+            {
+                if (c.renderMode == RenderMode.ScreenSpaceOverlay)
+                {
+                    canvas = c;
+                    break;
+                }
+            }
+        }
+
+        if (canvas != null)
+        {
+            // Delete only ShopPanel and PromptPanel, keep Canvas
+            GameObject shopPanel = FindDeepChild(canvas.transform, "ShopPanel");
+            if (shopPanel != null)
+            {
+                Debug.Log("[ShopUICreator] Found ShopPanel - deleting it...");
+                DestroyImmediate(shopPanel);
+                Debug.Log("✓ Deleted ShopPanel");
+            }
+
+            GameObject promptPanel = FindDeepChild(canvas.transform, "PromptPanel");
+            if (promptPanel != null)
+            {
+                Debug.Log("[ShopUICreator] Found PromptPanel - deleting it...");
+                DestroyImmediate(promptPanel);
+                Debug.Log("✓ Deleted PromptPanel");
+            }
+        }
+        else
+        {
+            Debug.Log("[ShopUICreator] No Canvas found in scene");
+        }
+
+        // 2. Delete ItemCardPrefab
+        string prefabPath = "Assets/Prefabs/Shop/ItemCardPrefab.prefab";
+        if (AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath) != null)
+        {
+            Debug.Log("[ShopUICreator] Found ItemCardPrefab - deleting it...");
+            AssetDatabase.DeleteAsset(prefabPath);
+            Debug.Log("✓ Deleted ItemCardPrefab");
+        }
+        else
+        {
+            Debug.Log("[ShopUICreator] ItemCardPrefab not found");
+        }
+
+        AssetDatabase.Refresh();
+
+        Debug.Log("[ShopUICreator] ===== CREATING NEW UI =====");
+
+        // 3. Create fresh UI
+        CreateCompleteShopUI();
+
+        // CRITICAL: Save and refresh assets BEFORE auto-assigning
+        AssetDatabase.SaveAssets();
+        AssetDatabase.Refresh();
+
+        Debug.Log("[ShopUICreator] Assets saved and refreshed");
+
+        // 4. Auto-assign references to ShopManager
+        ShopManager shopManager = FindObjectOfType<ShopManager>();
+        if (shopManager != null)
+        {
+            Debug.Log("[ShopUICreator] Found existing ShopManager - auto-assigning references...");
+            AutoAssignShopManagerReferences(shopManager);
+            Debug.Log("✓ Auto-assigned all UI references to ShopManager!");
+        }
+        else
+        {
+            Debug.Log("[ShopUICreator] No ShopManager found - you'll need to create one and assign references manually");
+        }
+
+        EditorUtility.DisplayDialog("Success!",
+            "Old UI deleted and NEW UI created!\n\n" +
+            "Created:\n" +
+            "- Fresh Canvas with all panels\n" +
+            "- New ItemCardPrefab with LayoutElement\n" +
+            "- All components properly configured\n" +
+            (shopManager != null ? "- Auto-assigned references to ShopManager!\n" : "") +
+            "\n" +
+            "Next: Add ShopItems to Available Items list!", "OK");
+
+        Debug.Log("[ShopUICreator] ===== RECREATION COMPLETE =====");
+    }
+
+    // ============================================
+    // AUTO-ASSIGN REFERENCES
+    // ============================================
+
+    private void AutoAssignShopManagerReferences(ShopManager shopManager)
+    {
+        SerializedObject so = new SerializedObject(shopManager);
+
+        Canvas canvas = FindObjectOfType<Canvas>();
+        if (canvas == null)
+        {
+            Debug.LogWarning("[ShopUICreator] No Canvas found!");
+            return;
+        }
+
+        // Find all UI elements
+        GameObject shopPanel = FindDeepChild(canvas.transform, "ShopPanel");
+        GameObject promptPanel = FindDeepChild(canvas.transform, "PromptPanel");
+        GameObject detailPanel = shopPanel != null ? FindDeepChild(shopPanel.transform, "DetailPanel") : null;
+        GameObject itemScrollView = shopPanel != null ? FindDeepChild(shopPanel.transform, "ItemScrollView") : null;
+
+        // Shop UI
+        if (shopPanel != null)
+        {
+            so.FindProperty("shopUI").objectReferenceValue = shopPanel;
+            Debug.Log("  ✓ Assigned Shop UI");
+        }
+
+        // Prompt UI
+        if (promptPanel != null)
+        {
+            so.FindProperty("promptUI").objectReferenceValue = promptPanel;
+
+            TextMeshProUGUI promptText = promptPanel.GetComponentInChildren<TextMeshProUGUI>();
+            if (promptText != null)
+            {
+                so.FindProperty("promptText").objectReferenceValue = promptText;
+            }
+            Debug.Log("  ✓ Assigned Prompt UI");
+        }
+
+        // Item Cards Container
+        if (itemScrollView != null)
+        {
+            GameObject viewport = FindDeepChild(itemScrollView.transform, "Viewport");
+            if (viewport != null)
+            {
+                GameObject content = FindDeepChild(viewport.transform, "Content");
+                if (content != null)
+                {
+                    so.FindProperty("itemCardsContainer").objectReferenceValue = content.GetComponent<RectTransform>();
+                    Debug.Log("  ✓ Assigned Item Cards Container");
+                }
+            }
+        }
+
+        // Item Card Prefab
+        GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Shop/ItemCardPrefab.prefab");
+        if (prefab != null)
+        {
+            so.FindProperty("itemCardPrefab").objectReferenceValue = prefab;
+            Debug.Log("  ✓ Assigned Item Card Prefab");
+        }
+
+        // Detail Panel
+        if (detailPanel != null)
+        {
+            so.FindProperty("detailPanel").objectReferenceValue = detailPanel;
+
+            Transform container = detailPanel.transform.Find("Container");
+            if (container != null)
+            {
+                AssignDetailPanelReferences(so, container);
+                Debug.Log("  ✓ Assigned Detail Panel references");
+            }
+        }
+
+        // Currency Text
+        if (shopPanel != null)
+        {
+            GameObject header = FindDeepChild(shopPanel.transform, "Header");
+            if (header != null)
+            {
+                GameObject currencyText = FindDeepChild(header.transform, "CurrencyText");
+                if (currencyText != null)
+                {
+                    TextMeshProUGUI currencyTMP = currencyText.GetComponent<TextMeshProUGUI>();
+                    if (currencyTMP != null)
+                    {
+                        so.FindProperty("currencyText").objectReferenceValue = currencyTMP;
+                        Debug.Log("  ✓ Assigned Currency Text");
+                    }
+                }
+            }
+        }
+
+        // Player (try to find by tag)
+        GameObject player = GameObject.FindGameObjectWithTag("Player");
+        if (player != null)
+        {
+            so.FindProperty("player").objectReferenceValue = player;
+            Debug.Log("  ✓ Assigned Player");
+        }
+        else
+        {
+            Debug.LogWarning("  ⚠ Player not found (tag 'Player'). Assign manually!");
+        }
+
+        so.ApplyModifiedProperties();
+        EditorUtility.SetDirty(shopManager);
     }
 }
 #endif

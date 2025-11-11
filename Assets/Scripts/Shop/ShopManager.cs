@@ -15,7 +15,7 @@ public class ShopManager : MonoBehaviour
     [SerializeField] private GameObject shopUI;
     [SerializeField] private GameObject promptUI;
     [SerializeField] private TextMeshProUGUI promptText;
-    [SerializeField] private Transform itemCardsContainer;
+    [SerializeField] private RectTransform itemCardsContainer;
     [SerializeField] private GameObject itemCardPrefab;
 
     [Header("Detail Panel")]
@@ -39,6 +39,28 @@ public class ShopManager : MonoBehaviour
 
     private void Start()
     {
+        // CHECK CANVAS SETUP
+        Canvas canvas = FindObjectOfType<Canvas>();
+        if (canvas != null)
+        {
+            Debug.Log($"[ShopManager] Canvas found - RenderMode: {canvas.renderMode}, PixelPerfect: {canvas.pixelPerfect}");
+
+            if (canvas.renderMode == RenderMode.ScreenSpaceCamera || canvas.renderMode == RenderMode.WorldSpace)
+            {
+                Debug.Log($"[ShopManager] Canvas worldCamera: {(canvas.worldCamera != null ? canvas.worldCamera.name : "NULL")}");
+            }
+
+            CanvasScaler scaler = canvas.GetComponent<CanvasScaler>();
+            if (scaler != null)
+            {
+                Debug.Log($"[ShopManager] CanvasScaler - UIScale: {scaler.uiScaleMode}, ReferenceResolution: {scaler.referenceResolution}");
+            }
+        }
+        else
+        {
+            Debug.LogError("[ShopManager] NO CANVAS FOUND!");
+        }
+
         // Hide UI at start
         if (shopUI != null) shopUI.SetActive(false);
         if (promptUI != null) promptUI.SetActive(false);
@@ -77,7 +99,21 @@ public class ShopManager : MonoBehaviour
 
     private void CreateItemCards()
     {
-        if (itemCardsContainer == null || itemCardPrefab == null) return;
+        Debug.Log($"[ShopManager] CreateItemCards called");
+
+        if (itemCardsContainer == null)
+        {
+            Debug.LogError("[ShopManager] itemCardsContainer is NULL!");
+            return;
+        }
+
+        if (itemCardPrefab == null)
+        {
+            Debug.LogError("[ShopManager] itemCardPrefab is NULL!");
+            return;
+        }
+
+        Debug.Log($"[ShopManager] Available items count: {availableItems.Count}");
 
         // Clear existing cards
         foreach (Transform child in itemCardsContainer)
@@ -89,7 +125,26 @@ public class ShopManager : MonoBehaviour
         // Create new cards
         foreach (ShopItem item in availableItems)
         {
+            Debug.Log($"[ShopManager] Creating card for item: {item.itemName}");
+
             GameObject cardObj = Instantiate(itemCardPrefab, itemCardsContainer);
+            cardObj.SetActive(true); // Make sure it's active!
+
+            RectTransform cardRect = cardObj.GetComponent<RectTransform>();
+            Image cardImage = cardObj.GetComponent<Image>();
+
+            Debug.Log($"[ShopManager] Card created: {cardObj.name}, Active: {cardObj.activeSelf}, Parent: {cardObj.transform.parent.name}");
+            Debug.Log($"[ShopManager] Card RectTransform - Size: {cardRect.rect.size}, Position: {cardRect.anchoredPosition}, Scale: {cardRect.localScale}");
+
+            if (cardImage != null)
+            {
+                Debug.Log($"[ShopManager] Card Image - Color: {cardImage.color}, Enabled: {cardImage.enabled}, Material: {(cardImage.material != null ? cardImage.material.name : "NULL")}, Sprite: {(cardImage.sprite != null ? cardImage.sprite.name : "NULL")}, Type: {cardImage.type}, Raycast: {cardImage.raycastTarget}");
+            }
+            else
+            {
+                Debug.LogWarning($"[ShopManager] Card has NO Image component!");
+            }
+
             ShopItemCard card = cardObj.GetComponent<ShopItemCard>();
 
             if (card != null)
@@ -97,6 +152,117 @@ public class ShopManager : MonoBehaviour
                 card.Setup(item);
                 card.OnCardClicked += OnItemCardClicked;
                 itemCards.Add(card);
+                Debug.Log($"[ShopManager] Card setup complete for: {item.itemName}");
+            }
+            else
+            {
+                Debug.LogError($"[ShopManager] ShopItemCard component not found on instantiated prefab!");
+            }
+        }
+
+        Debug.Log($"[ShopManager] Total cards created: {itemCards.Count}");
+
+        // Force update layout to ensure cards are visible
+        // Need to do this in next frame for layout to update properly
+        StartCoroutine(ForceLayoutUpdate());
+    }
+
+    private System.Collections.IEnumerator ForceLayoutUpdate()
+    {
+        Debug.Log($"[ShopManager] Forcing layout update...");
+
+        if (itemCardsContainer != null)
+        {
+            // CHECK VIEWPORT AND SCROLLVIEW SIZES
+            Transform viewport = itemCardsContainer.parent;
+            if (viewport != null)
+            {
+                RectTransform viewportRect = viewport.GetComponent<RectTransform>();
+                Debug.Log($"[ShopManager] VIEWPORT - Size: {viewportRect.rect.size}, Position: {viewportRect.anchoredPosition}");
+
+                Transform scrollView = viewport.parent;
+                if (scrollView != null)
+                {
+                    RectTransform scrollRect = scrollView.GetComponent<RectTransform>();
+                    Debug.Log($"[ShopManager] SCROLLVIEW - Size: {scrollRect.rect.size}, Position: {scrollRect.anchoredPosition}");
+                }
+            }
+
+            Debug.Log($"[ShopManager] CONTENT - Size: {itemCardsContainer.rect.size}, Position: {itemCardsContainer.anchoredPosition}");
+
+            VerticalLayoutGroup layoutGroup = itemCardsContainer.GetComponent<VerticalLayoutGroup>();
+            ContentSizeFitter sizeFitter = itemCardsContainer.GetComponent<ContentSizeFitter>();
+
+            if (layoutGroup != null)
+            {
+                Debug.Log($"[ShopManager] VerticalLayoutGroup found - Spacing: {layoutGroup.spacing}, ChildControlHeight: {layoutGroup.childControlHeight}, ChildControlWidth: {layoutGroup.childControlWidth}");
+            }
+            else
+            {
+                Debug.LogError("[ShopManager] NO VerticalLayoutGroup found on Content!");
+                yield break;
+            }
+
+            if (sizeFitter != null)
+            {
+                Debug.Log($"[ShopManager] ContentSizeFitter found - VerticalFit: {sizeFitter.verticalFit}");
+            }
+            else
+            {
+                Debug.LogError("[ShopManager] NO ContentSizeFitter found on Content!");
+                yield break;
+            }
+
+            // FORCE IMMEDIATE LAYOUT CALCULATION
+            // Step 1: Mark layout as dirty
+            UnityEngine.UI.LayoutRebuilder.MarkLayoutForRebuild(itemCardsContainer);
+
+            // Step 2: Wait a frame
+            yield return null;
+
+            // Step 3: Force canvas update
+            Canvas.ForceUpdateCanvases();
+
+            // Step 4: Manually calculate layout
+            layoutGroup.CalculateLayoutInputHorizontal();
+            layoutGroup.CalculateLayoutInputVertical();
+            layoutGroup.SetLayoutHorizontal();
+            layoutGroup.SetLayoutVertical();
+
+            Debug.Log($"[ShopManager] Manual layout calculation complete");
+
+            // Step 5: Wait another frame
+            yield return null;
+
+            // Step 6: Force rebuild again
+            Canvas.ForceUpdateCanvases();
+            UnityEngine.UI.LayoutRebuilder.ForceRebuildLayoutImmediate(itemCardsContainer);
+
+            // Step 7: One more frame and rebuild
+            yield return null;
+            Canvas.ForceUpdateCanvases();
+            UnityEngine.UI.LayoutRebuilder.ForceRebuildLayoutImmediate(itemCardsContainer);
+
+            Debug.Log($"[ShopManager] Layout rebuild complete. Content size: {itemCardsContainer.sizeDelta}");
+
+            // Log positions of first few cards
+            for (int i = 0; i < Mathf.Min(3, itemCardsContainer.childCount); i++)
+            {
+                RectTransform childRect = itemCardsContainer.GetChild(i) as RectTransform;
+                if (childRect != null)
+                {
+                    Debug.Log($"[ShopManager] Card {i} - Position: {childRect.anchoredPosition}, AnchorMin: {childRect.anchorMin}, AnchorMax: {childRect.anchorMax}, Pivot: {childRect.pivot}, Size: {childRect.sizeDelta}");
+
+                    LayoutElement layoutElement = childRect.GetComponent<LayoutElement>();
+                    if (layoutElement != null)
+                    {
+                        Debug.Log($"[ShopManager] Card {i} LayoutElement - PreferredHeight: {layoutElement.preferredHeight}, MinHeight: {layoutElement.minHeight}");
+                    }
+                    else
+                    {
+                        Debug.LogError($"[ShopManager] Card {i} has NO LayoutElement component!");
+                    }
+                }
             }
         }
     }

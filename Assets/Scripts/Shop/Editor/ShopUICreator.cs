@@ -127,13 +127,19 @@ public class ShopUICreator : EditorWindow
         Selection.activeGameObject = shopPanel;
 
         Debug.Log("✅ [ShopUICreator] Shop UI created successfully!");
-        EditorUtility.DisplayDialog("Success",
-            "Shop UI has been created!\n\n" +
+        EditorUtility.DisplayDialog("Success!",
+            "IMPROVED Shop UI has been created!\n\n" +
             "Created:\n" +
-            "- Canvas with ShopPanel\n" +
+            "- Canvas with styled ShopPanel (gold header)\n" +
             "- PromptPanel\n" +
-            "- DetailPanel\n" +
-            "- Item Card Prefab\n\n" +
+            "- DetailPanel (with gold outline)\n" +
+            "- Item Card Prefab (improved visibility)\n\n" +
+            "UI Improvements:\n" +
+            "- Better colors and contrast\n" +
+            "- Visible outlines on panels\n" +
+            "- Gold theme for shop\n" +
+            "- Proper text alignment\n" +
+            "- Placeholder text for testing\n\n" +
             "Next: Create ShopManager and assign references!", "OK");
     }
 
@@ -147,14 +153,15 @@ public class ShopUICreator : EditorWindow
         shopRect.anchorMin = Vector2.zero;
         shopRect.anchorMax = Vector2.one;
         shopRect.sizeDelta = Vector2.zero;
+        shopRect.anchoredPosition = Vector2.zero;
 
         Image shopImage = shopPanel.AddComponent<Image>();
-        shopImage.color = new Color(0, 0, 0, 0.8f);
+        shopImage.color = new Color(0, 0, 0, 0.85f);
 
         // Deactivate by default
         shopPanel.SetActive(false);
 
-        // Header panel
+        // Header panel (with background)
         GameObject header = new GameObject("Header");
         header.transform.SetParent(shopPanel.transform, false);
         RectTransform headerRect = header.AddComponent<RectTransform>();
@@ -164,33 +171,41 @@ public class ShopUICreator : EditorWindow
         headerRect.anchoredPosition = new Vector2(0, 0);
         headerRect.sizeDelta = new Vector2(0, 100);
 
+        // Header background
+        Image headerBg = header.AddComponent<Image>();
+        headerBg.color = new Color(0.1f, 0.1f, 0.1f, 0.9f);
+
         // Title text
         GameObject titleText = new GameObject("TitleText");
         titleText.transform.SetParent(header.transform, false);
         TextMeshProUGUI titleTMP = titleText.AddComponent<TextMeshProUGUI>();
         titleTMP.text = "SHOP";
         titleTMP.fontSize = 48;
+        titleTMP.fontStyle = FontStyles.Bold;
         titleTMP.alignment = TextAlignmentOptions.Center;
-        titleTMP.color = Color.white;
+        titleTMP.color = new Color(1f, 0.85f, 0f); // Gold
 
         RectTransform titleRect = titleText.GetComponent<RectTransform>();
         titleRect.anchorMin = new Vector2(0, 0);
         titleRect.anchorMax = new Vector2(0.5f, 1);
         titleRect.sizeDelta = Vector2.zero;
+        titleRect.anchoredPosition = Vector2.zero;
 
         // Currency text
         GameObject currencyText = new GameObject("CurrencyText");
         currencyText.transform.SetParent(header.transform, false);
         TextMeshProUGUI currencyTMP = currencyText.AddComponent<TextMeshProUGUI>();
-        currencyTMP.text = "Scrap: 0";
+        currencyTMP.text = "Scrap: 100";
         currencyTMP.fontSize = 36;
+        currencyTMP.fontStyle = FontStyles.Bold;
         currencyTMP.alignment = TextAlignmentOptions.Center;
-        currencyTMP.color = Color.yellow;
+        currencyTMP.color = new Color(1f, 0.85f, 0f); // Gold
 
         RectTransform currencyRect = currencyText.GetComponent<RectTransform>();
         currencyRect.anchorMin = new Vector2(0.5f, 0);
         currencyRect.anchorMax = new Vector2(1, 1);
         currencyRect.sizeDelta = Vector2.zero;
+        currencyRect.anchoredPosition = Vector2.zero;
 
         // Scroll View for items
         GameObject scrollView = CreateScrollView(shopPanel.transform);
@@ -215,7 +230,12 @@ public class ShopUICreator : EditorWindow
         scrollRect.sizeDelta = new Vector2(-100, -150);
 
         Image scrollImage = scrollView.AddComponent<Image>();
-        scrollImage.color = new Color(0.1f, 0.1f, 0.1f, 0.8f);
+        scrollImage.color = new Color(0.15f, 0.15f, 0.15f, 0.9f);
+
+        // Add outline for better visibility
+        Outline scrollOutline = scrollView.AddComponent<Outline>();
+        scrollOutline.effectColor = new Color(0.5f, 0.5f, 0.5f, 0.8f);
+        scrollOutline.effectDistance = new Vector2(2, -2);
 
         ScrollRect scroll = scrollView.AddComponent<ScrollRect>();
 
@@ -272,7 +292,12 @@ public class ShopUICreator : EditorWindow
         detailRect.sizeDelta = new Vector2(-100, -150);
 
         Image detailImage = detailPanel.AddComponent<Image>();
-        detailImage.color = new Color(0.15f, 0.15f, 0.15f, 0.9f);
+        detailImage.color = new Color(0.15f, 0.15f, 0.15f, 0.95f);
+
+        // Add outline for better visibility
+        Outline outline = detailPanel.AddComponent<Outline>();
+        outline.effectColor = new Color(1f, 0.85f, 0f, 0.8f); // Gold outline
+        outline.effectDistance = new Vector2(2, -2);
 
         // Deactivate by default
         detailPanel.SetActive(false);
@@ -283,27 +308,42 @@ public class ShopUICreator : EditorWindow
         RectTransform containerRect = container.AddComponent<RectTransform>();
         containerRect.anchorMin = Vector2.zero;
         containerRect.anchorMax = Vector2.one;
-        containerRect.sizeDelta = new Vector2(-40, -40);
+        containerRect.anchoredPosition = Vector2.zero;
+        containerRect.sizeDelta = Vector2.zero;
 
         VerticalLayoutGroup layout = container.AddComponent<VerticalLayoutGroup>();
-        layout.spacing = 20;
+        layout.spacing = 15;
         layout.padding = new RectOffset(20, 20, 20, 20);
         layout.childControlHeight = false;
+        layout.childControlWidth = true;
         layout.childForceExpandHeight = false;
+        layout.childForceExpandWidth = true;
+        layout.childAlignment = TextAnchor.UpperCenter;
 
         // Item Name
-        CreateDetailText(container.transform, "ItemName", "Item Name", 32, TextAlignmentOptions.Center);
+        GameObject nameObj = CreateDetailText(container.transform, "ItemName", "Item Name", 28, TextAlignmentOptions.Center);
+        LayoutElement nameLayout = nameObj.AddComponent<LayoutElement>();
+        nameLayout.preferredHeight = 40;
 
         // Item Description
-        GameObject desc = CreateDetailText(container.transform, "ItemDescription", "Description text here...", 20, TextAlignmentOptions.TopLeft);
+        GameObject desc = CreateDetailText(container.transform, "ItemDescription", "Select an item to view its details...", 18, TextAlignmentOptions.TopLeft);
+        TextMeshProUGUI descText = desc.GetComponent<TextMeshProUGUI>();
+        descText.enableWordWrapping = true;
         LayoutElement descLayout = desc.AddComponent<LayoutElement>();
         descLayout.preferredHeight = 200;
+        descLayout.flexibleHeight = 1;
 
         // Item Price
-        CreateDetailText(container.transform, "ItemPrice", "Price: 0 Scrap", 24, TextAlignmentOptions.Center);
+        GameObject priceObj = CreateDetailText(container.transform, "ItemPrice", "Price: 0 Scrap", 22, TextAlignmentOptions.Center);
+        TextMeshProUGUI priceText = priceObj.GetComponent<TextMeshProUGUI>();
+        priceText.color = new Color(1f, 0.85f, 0f); // Gold color
+        LayoutElement priceLayout = priceObj.AddComponent<LayoutElement>();
+        priceLayout.preferredHeight = 30;
 
         // Item Stock
-        CreateDetailText(container.transform, "ItemStock", "Stock: 0", 24, TextAlignmentOptions.Center);
+        GameObject stockObj = CreateDetailText(container.transform, "ItemStock", "Stock: ∞", 20, TextAlignmentOptions.Center);
+        LayoutElement stockLayout = stockObj.AddComponent<LayoutElement>();
+        stockLayout.preferredHeight = 30;
 
         // Buy Button
         GameObject buyButton = new GameObject("BuyButton");
@@ -316,11 +356,20 @@ public class ShopUICreator : EditorWindow
 
         Button button = buyButton.AddComponent<Button>();
 
+        // Button color transitions
+        ColorBlock colors = button.colors;
+        colors.normalColor = new Color(0.2f, 0.8f, 0.2f, 1f);
+        colors.highlightedColor = new Color(0.3f, 0.9f, 0.3f, 1f);
+        colors.pressedColor = new Color(0.15f, 0.6f, 0.15f, 1f);
+        colors.disabledColor = new Color(0.5f, 0.5f, 0.5f, 0.5f);
+        button.colors = colors;
+
         GameObject buyText = new GameObject("Text");
         buyText.transform.SetParent(buyButton.transform, false);
         TextMeshProUGUI buyTMP = buyText.AddComponent<TextMeshProUGUI>();
         buyTMP.text = "BUY";
         buyTMP.fontSize = 28;
+        buyTMP.fontStyle = FontStyles.Bold;
         buyTMP.alignment = TextAlignmentOptions.Center;
         buyTMP.color = Color.white;
 
@@ -328,11 +377,12 @@ public class ShopUICreator : EditorWindow
         buyTextRect.anchorMin = Vector2.zero;
         buyTextRect.anchorMax = Vector2.one;
         buyTextRect.sizeDelta = Vector2.zero;
+        buyTextRect.anchoredPosition = Vector2.zero;
 
         LayoutElement buyLayout = buyButton.AddComponent<LayoutElement>();
         buyLayout.preferredHeight = 60;
 
-        Debug.Log("✓ Created Detail Panel");
+        Debug.Log("✓ Created Detail Panel (IMPROVED)");
         return detailPanel;
     }
 
@@ -398,25 +448,40 @@ public class ShopUICreator : EditorWindow
         RectTransform cardRect = itemCard.AddComponent<RectTransform>();
         cardRect.sizeDelta = new Vector2(400, 100);
 
+        // ЯРКИЙ ВИДИМЫЙ ФОН КАРТОЧКИ!
         Image cardImage = itemCard.AddComponent<Image>();
-        cardImage.color = new Color(0.2f, 0.2f, 0.2f, 1f);
+        cardImage.color = new Color(0.2f, 0.3f, 0.4f, 1f); // Темно-синий, полностью непрозрачный
 
         Button button = itemCard.AddComponent<Button>();
+
+        // ЯРКИЕ цвета кнопки для отличной видимости
+        ColorBlock buttonColors = button.colors;
+        buttonColors.normalColor = new Color(0.25f, 0.35f, 0.45f, 1f); // Светлее синий
+        buttonColors.highlightedColor = new Color(0.35f, 0.5f, 0.65f, 1f); // Ещё светлее при наведении
+        buttonColors.pressedColor = new Color(0.15f, 0.25f, 0.35f, 1f); // Темнее при нажатии
+        buttonColors.selectedColor = new Color(0.4f, 0.5f, 0.3f, 1f); // Жёлто-зелёный когда выбран
+        button.colors = buttonColors;
+
+        // ЯРКАЯ ОБВОДКА
+        Outline outline = itemCard.AddComponent<Outline>();
+        outline.effectColor = new Color(1f, 0.85f, 0f, 1f); // ЗОЛОТАЯ обводка!
+        outline.effectDistance = new Vector2(3, -3);
 
         // Add ShopItemCard component
         itemCard.AddComponent<ShopItemCard>();
 
-        // Background
+        // Background (visible stripe for accent)
         GameObject background = new GameObject("Background");
         background.transform.SetParent(itemCard.transform, false);
         RectTransform bgRect = background.AddComponent<RectTransform>();
         bgRect.anchorMin = Vector2.zero;
         bgRect.anchorMax = Vector2.one;
         bgRect.sizeDelta = Vector2.zero;
+        bgRect.anchoredPosition = Vector2.zero;
         Image bgImage = background.AddComponent<Image>();
-        bgImage.color = new Color(1, 1, 1, 0.1f);
+        bgImage.color = new Color(1f, 1f, 1f, 0.1f); // Немного видимый белый overlay
 
-        // Icon
+        // Icon (ЯРКИЙ placeholder!)
         GameObject icon = new GameObject("Icon");
         icon.transform.SetParent(itemCard.transform, false);
         RectTransform iconRect = icon.AddComponent<RectTransform>();
@@ -426,35 +491,53 @@ public class ShopUICreator : EditorWindow
         iconRect.anchoredPosition = new Vector2(10, 0);
         iconRect.sizeDelta = new Vector2(80, 80);
         Image iconImage = icon.AddComponent<Image>();
-        iconImage.color = Color.white;
+        iconImage.color = new Color(0.8f, 0.8f, 0.8f, 1f); // ЯРКИЙ серый placeholder - ПОЛНОСТЬЮ НЕПРОЗРАЧНЫЙ!
 
-        // Name
+        // Name - ЯРКИЙ БЕЛЫЙ ТЕКСТ
         GameObject nameText = new GameObject("NameText");
         nameText.transform.SetParent(itemCard.transform, false);
         RectTransform nameRect = nameText.AddComponent<RectTransform>();
         nameRect.anchorMin = new Vector2(0, 0.5f);
         nameRect.anchorMax = new Vector2(1, 1);
-        nameRect.anchoredPosition = new Vector2(100, -10);
-        nameRect.sizeDelta = new Vector2(-220, -20);
+        nameRect.pivot = new Vector2(0, 1);
+        nameRect.anchoredPosition = new Vector2(100, -5);
+        nameRect.sizeDelta = new Vector2(-210, -10);
         TextMeshProUGUI nameTMP = nameText.AddComponent<TextMeshProUGUI>();
-        nameTMP.text = "Item Name";
-        nameTMP.fontSize = 20;
-        nameTMP.color = Color.white;
+        nameTMP.text = "ITEM NAME";
+        nameTMP.fontSize = 24;
+        nameTMP.fontStyle = FontStyles.Bold;
+        nameTMP.color = new Color(1f, 1f, 1f, 1f); // ЯРКИЙ БЕЛЫЙ
+        nameTMP.alignment = TextAlignmentOptions.TopLeft;
+        nameTMP.enableWordWrapping = false;
+        nameTMP.overflowMode = TextOverflowModes.Ellipsis;
 
-        // Price
+        // Добавим тень для лучшей читаемости
+        Shadow nameShadow = nameText.AddComponent<Shadow>();
+        nameShadow.effectColor = new Color(0, 0, 0, 0.8f);
+        nameShadow.effectDistance = new Vector2(2, -2);
+
+        // Price - ЯРКИЙ ЗОЛОТОЙ
         GameObject priceText = new GameObject("PriceText");
         priceText.transform.SetParent(itemCard.transform, false);
         RectTransform priceRect = priceText.AddComponent<RectTransform>();
         priceRect.anchorMin = new Vector2(0, 0);
         priceRect.anchorMax = new Vector2(1, 0.5f);
-        priceRect.anchoredPosition = new Vector2(100, 10);
-        priceRect.sizeDelta = new Vector2(-220, -20);
+        priceRect.pivot = new Vector2(0, 0);
+        priceRect.anchoredPosition = new Vector2(100, 5);
+        priceRect.sizeDelta = new Vector2(-210, -10);
         TextMeshProUGUI priceTMP = priceText.AddComponent<TextMeshProUGUI>();
-        priceTMP.text = "0 Scrap";
-        priceTMP.fontSize = 18;
-        priceTMP.color = Color.yellow;
+        priceTMP.text = "50 Scrap";
+        priceTMP.fontSize = 20;
+        priceTMP.fontStyle = FontStyles.Bold;
+        priceTMP.color = new Color(1f, 0.9f, 0.2f, 1f); // ЯРКО-ЗОЛОТОЙ
+        priceTMP.alignment = TextAlignmentOptions.BottomLeft;
 
-        // Stock
+        // Тень для цены
+        Shadow priceShadow = priceText.AddComponent<Shadow>();
+        priceShadow.effectColor = new Color(0, 0, 0, 0.8f);
+        priceShadow.effectDistance = new Vector2(2, -2);
+
+        // Stock - ЯРКИЙ СВЕТЛЫЙ
         GameObject stockText = new GameObject("StockText");
         stockText.transform.SetParent(itemCard.transform, false);
         RectTransform stockRect = stockText.AddComponent<RectTransform>();
@@ -464,10 +547,11 @@ public class ShopUICreator : EditorWindow
         stockRect.anchoredPosition = new Vector2(-10, 0);
         stockRect.sizeDelta = new Vector2(80, 40);
         TextMeshProUGUI stockTMP = stockText.AddComponent<TextMeshProUGUI>();
-        stockTMP.text = "x0";
-        stockTMP.fontSize = 16;
+        stockTMP.text = "x5";
+        stockTMP.fontSize = 20;
+        stockTMP.fontStyle = FontStyles.Bold;
         stockTMP.alignment = TextAlignmentOptions.Center;
-        stockTMP.color = Color.gray;
+        stockTMP.color = new Color(0.9f, 0.9f, 0.9f, 1f); // ЯРКИЙ светло-серый
 
         // Assign references to ShopItemCard
         ShopItemCard cardScript = itemCard.GetComponent<ShopItemCard>();
@@ -492,10 +576,23 @@ public class ShopUICreator : EditorWindow
         PrefabUtility.SaveAsPrefabAsset(itemCard, prefabPath);
         DestroyImmediate(itemCard);
 
-        Debug.Log($"✓ Created Item Card Prefab at: {prefabPath}");
+        Debug.Log($"✓ Created IMPROVED Item Card Prefab at: {prefabPath}");
 
         GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
         EditorGUIUtility.PingObject(prefab);
+
+        EditorUtility.DisplayDialog("Success!",
+            "SUPER-VISIBLE Item Card Prefab created!\n\n" +
+            $"Saved to: {prefabPath}\n\n" +
+            "Improvements:\n" +
+            "- Dark blue background (fully opaque!)\n" +
+            "- GOLD outline around card\n" +
+            "- BRIGHT white text with shadow\n" +
+            "- BRIGHT gold price with shadow\n" +
+            "- Visible gray placeholder for icon\n" +
+            "- Hover effects on mouse over\n" +
+            "- Text shadows for readability\n\n" +
+            "Cards are NO LONGER transparent!", "OK");
     }
 
     // ============================================

@@ -400,21 +400,28 @@ public class ShopUICreator : EditorWindow
 
         Image cardImage = itemCard.AddComponent<Image>();
         cardImage.color = new Color(0.2f, 0.2f, 0.2f, 1f);
+        // Use built-in sprite for background
+        cardImage.sprite = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/Background.psd");
+        cardImage.type = Image.Type.Sliced;
 
         Button button = itemCard.AddComponent<Button>();
 
         // Add ShopItemCard component
         itemCard.AddComponent<ShopItemCard>();
 
-        // Background
+        // Background (border/outline effect)
         GameObject background = new GameObject("Background");
         background.transform.SetParent(itemCard.transform, false);
         RectTransform bgRect = background.AddComponent<RectTransform>();
         bgRect.anchorMin = Vector2.zero;
         bgRect.anchorMax = Vector2.one;
         bgRect.sizeDelta = Vector2.zero;
+        bgRect.offsetMin = new Vector2(2, 2);
+        bgRect.offsetMax = new Vector2(-2, -2);
         Image bgImage = background.AddComponent<Image>();
-        bgImage.color = new Color(1, 1, 1, 0.1f);
+        bgImage.color = new Color(0.15f, 0.15f, 0.15f, 1f);
+        bgImage.sprite = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/Background.psd");
+        bgImage.type = Image.Type.Sliced;
 
         // Icon
         GameObject icon = new GameObject("Icon");
@@ -426,7 +433,8 @@ public class ShopUICreator : EditorWindow
         iconRect.anchoredPosition = new Vector2(10, 0);
         iconRect.sizeDelta = new Vector2(80, 80);
         Image iconImage = icon.AddComponent<Image>();
-        iconImage.color = Color.white;
+        iconImage.sprite = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/UISprite.psd");
+        iconImage.color = new Color(0.5f, 0.5f, 0.5f, 1f); // Gray placeholder
 
         // Name
         GameObject nameText = new GameObject("NameText");
@@ -468,6 +476,11 @@ public class ShopUICreator : EditorWindow
         stockTMP.fontSize = 16;
         stockTMP.alignment = TextAlignmentOptions.Center;
         stockTMP.color = Color.gray;
+
+        // Add LayoutElement for proper sizing in VerticalLayoutGroup
+        LayoutElement layoutElement = itemCard.AddComponent<LayoutElement>();
+        layoutElement.minHeight = 100;
+        layoutElement.preferredHeight = 100;
 
         // Assign references to ShopItemCard
         ShopItemCard cardScript = itemCard.GetComponent<ShopItemCard>();

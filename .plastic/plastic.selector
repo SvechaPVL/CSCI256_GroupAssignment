@@ -1,4 +1,0 @@
-repository "CSCI256_GroupAssignment/CSCI256_GroupAssignment@18968265478168@cloud"
-  path "/"
-    br "/main"
-    co "/main"

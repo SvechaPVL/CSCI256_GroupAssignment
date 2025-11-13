@@ -775,8 +775,13 @@ public class FixShopSystem : EditorWindow
 
         // Настраиваем начальное количество скрапа
         SerializedObject currencySO = new SerializedObject(currency);
-        currencySO.FindProperty("startingScrap").intValue = 100;
-        currencySO.ApplyModifiedProperties();
+        SerializedProperty currentScrapProp = currencySO.FindProperty("currentScrap");
+        if (currentScrapProp != null)
+        {
+            currentScrapProp.intValue = 100;
+            currencySO.ApplyModifiedProperties();
+            Debug.Log("  ✓ Начальный скрап установлен: 100");
+        }
 
         // Добавляем или проверяем PlayerInventory
         PlayerInventory inventory = player.GetComponent<PlayerInventory>();

@@ -273,10 +273,9 @@ public class ShopManager : MonoBehaviour
 
             // 🔍 DETAILED VISIBILITY DIAGNOSTICS
             Debug.Log($"[ShopManager] 🔍 VISIBILITY DIAGNOSTICS:");
-            Debug.Log($"[ShopManager] Canvas active: {shopCanvas.gameObject.activeSelf}, Canvas.enabled: {shopCanvas.enabled}");
-            Debug.Log($"[ShopManager] ShopPanel active: {shopPanel.activeSelf}");
-            Debug.Log($"[ShopManager] ScrollView active: {scrollView.gameObject.activeSelf}");
-            Debug.Log($"[ShopManager] Viewport active: {viewport.gameObject.activeSelf}");
+            Canvas canvas = FindObjectOfType<Canvas>();
+            Debug.Log($"[ShopManager] Canvas active: {(canvas != null ? canvas.gameObject.activeSelf.ToString() : "NULL")}, Canvas.enabled: {(canvas != null ? canvas.enabled.ToString() : "NULL")}");
+            Debug.Log($"[ShopManager] ShopUI active: {shopUI.activeSelf}");
             Debug.Log($"[ShopManager] Content active: {itemCardsContainer.gameObject.activeSelf}");
 
             // Check viewport mask
@@ -298,7 +297,10 @@ public class ShopManager : MonoBehaviour
                 if (childRect != null)
                 {
                     Debug.Log($"[ShopManager] Card {i} - Position: {childRect.anchoredPosition}, AnchorMin: {childRect.anchorMin}, AnchorMax: {childRect.anchorMax}, Pivot: {childRect.pivot}, Size: {childRect.sizeDelta}");
-                    Debug.Log($"[ShopManager] Card {i} - Active: {childRect.gameObject.activeSelf}, WorldCorners: {string.Join(", ", childRect.GetWorldCorners())}");
+
+                    Vector3[] corners = new Vector3[4];
+                    childRect.GetWorldCorners(corners);
+                    Debug.Log($"[ShopManager] Card {i} - Active: {childRect.gameObject.activeSelf}, WorldCorners: [{corners[0]}, {corners[1]}, {corners[2]}, {corners[3]}]");
 
                     Image cardImage = childRect.GetComponent<Image>();
                     if (cardImage != null)

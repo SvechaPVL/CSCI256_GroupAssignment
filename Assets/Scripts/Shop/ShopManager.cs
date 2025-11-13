@@ -245,9 +245,14 @@ public class ShopManager : MonoBehaviour
 
             Debug.Log($"[ShopManager] Layout rebuild complete. Content size: {itemCardsContainer.sizeDelta}");
 
-            // 🔥 MANUAL POSITIONING FIX - force each card to correct Y position
-            Debug.Log($"[ShopManager] 🔥 FORCING MANUAL CARD POSITIONING...");
+            // 🔥 MANUAL POSITIONING AND SIZE FIX - force each card to correct position and size
+            Debug.Log($"[ShopManager] 🔥 FORCING MANUAL CARD POSITIONING AND SIZE...");
             float currentY = -layoutGroup.padding.top;
+            float contentWidth = itemCardsContainer.rect.width;
+            float cardWidth = contentWidth - layoutGroup.padding.left - layoutGroup.padding.right;
+
+            Debug.Log($"[ShopManager] Content width: {contentWidth}, Card width will be: {cardWidth}");
+
             for (int i = 0; i < itemCardsContainer.childCount; i++)
             {
                 RectTransform childRect = itemCardsContainer.GetChild(i) as RectTransform;
@@ -256,10 +261,11 @@ public class ShopManager : MonoBehaviour
                     LayoutElement layoutElement = childRect.GetComponent<LayoutElement>();
                     float cardHeight = layoutElement != null ? layoutElement.preferredHeight : 120f;
 
-                    // FORCE the position!
+                    // FORCE the position AND size!
                     childRect.anchoredPosition = new Vector2(0, currentY);
+                    childRect.sizeDelta = new Vector2(cardWidth, cardHeight);
 
-                    Debug.Log($"[ShopManager] 🎯 FORCED Card {i} to Position Y={currentY} (height={cardHeight})");
+                    Debug.Log($"[ShopManager] 🎯 FORCED Card {i} to Position Y={currentY}, Size=({cardWidth}, {cardHeight})");
 
                     currentY -= (cardHeight + layoutGroup.spacing);
                 }

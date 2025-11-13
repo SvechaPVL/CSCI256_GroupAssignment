@@ -286,9 +286,9 @@ public class FixShopSystem : EditorWindow
         layout.spacing = 10;
         layout.padding = new RectOffset(10, 10, 10, 10);
         layout.childControlHeight = true;   // TRUE - layout контролирует высоту для правильного позиционирования!
-        layout.childControlWidth = false;   // FALSE - ширина контролируется anchors карточек!
+        layout.childControlWidth = true;    // TRUE - layout контролирует ширину для видимости карточек!
         layout.childForceExpandHeight = false;
-        layout.childForceExpandWidth = false;  // FALSE - не нужно когда childControlWidth = false
+        layout.childForceExpandWidth = false;
         layout.childAlignment = TextAnchor.UpperCenter;
 
         // ContentSizeFitter

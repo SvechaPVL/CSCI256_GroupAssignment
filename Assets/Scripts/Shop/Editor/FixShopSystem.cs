@@ -443,7 +443,7 @@ public class FixShopSystem : EditorWindow
         cardRect.anchorMin = new Vector2(0, 1);      // Привязка к верху
         cardRect.anchorMax = new Vector2(1, 1);      // Растягивается по ширине
         cardRect.pivot = new Vector2(0.5f, 1f);      // Pivot сверху
-        cardRect.sizeDelta = new Vector2(1000, 120);    // Начальная ширина 1000, высота 120
+        cardRect.sizeDelta = new Vector2(0, 120);    // Ширина 0 = растягивание по anchors, высота 120
 
         // Background Image - ЯРКИЙ ЦВЕТ ДЛЯ ВИДИМОСТИ!
         Image cardImage = itemCard.AddComponent<Image>();

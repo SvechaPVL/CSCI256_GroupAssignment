@@ -245,7 +245,28 @@ public class ShopManager : MonoBehaviour
 
             Debug.Log($"[ShopManager] Layout rebuild complete. Content size: {itemCardsContainer.sizeDelta}");
 
-            // Log positions of first few cards
+            // 🔥 MANUAL POSITIONING FIX - force each card to correct Y position
+            Debug.Log($"[ShopManager] 🔥 FORCING MANUAL CARD POSITIONING...");
+            float currentY = -layoutGroup.padding.top;
+            for (int i = 0; i < itemCardsContainer.childCount; i++)
+            {
+                RectTransform childRect = itemCardsContainer.GetChild(i) as RectTransform;
+                if (childRect != null && childRect.gameObject.activeSelf)
+                {
+                    LayoutElement layoutElement = childRect.GetComponent<LayoutElement>();
+                    float cardHeight = layoutElement != null ? layoutElement.preferredHeight : 120f;
+
+                    // FORCE the position!
+                    childRect.anchoredPosition = new Vector2(0, currentY);
+
+                    Debug.Log($"[ShopManager] 🎯 FORCED Card {i} to Position Y={currentY} (height={cardHeight})");
+
+                    currentY -= (cardHeight + layoutGroup.spacing);
+                }
+            }
+
+            // Log positions after manual positioning
+            Debug.Log($"[ShopManager] After manual positioning:");
             for (int i = 0; i < Mathf.Min(3, itemCardsContainer.childCount); i++)
             {
                 RectTransform childRect = itemCardsContainer.GetChild(i) as RectTransform;

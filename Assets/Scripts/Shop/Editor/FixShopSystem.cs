@@ -285,7 +285,7 @@ public class FixShopSystem : EditorWindow
         VerticalLayoutGroup layout = content.AddComponent<VerticalLayoutGroup>();
         layout.spacing = 10;
         layout.padding = new RectOffset(10, 10, 10, 10);
-        layout.childControlHeight = false;  // FALSE - карточки контролируют свою высоту!
+        layout.childControlHeight = true;   // TRUE - layout контролирует высоту для правильного позиционирования!
         layout.childControlWidth = true;    // TRUE - заполняют ширину
         layout.childForceExpandHeight = false;
         layout.childForceExpandWidth = true;

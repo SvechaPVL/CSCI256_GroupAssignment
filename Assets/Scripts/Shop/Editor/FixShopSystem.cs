@@ -285,8 +285,8 @@ public class FixShopSystem : EditorWindow
         VerticalLayoutGroup layout = content.AddComponent<VerticalLayoutGroup>();
         layout.spacing = 10;
         layout.padding = new RectOffset(10, 10, 10, 10);
-        layout.childControlHeight = true;   // TRUE - layout контролирует высоту для правильного позиционирования!
-        layout.childControlWidth = true;    // TRUE - layout контролирует ширину для видимости карточек!
+        layout.childControlHeight = true;   // TRUE - layout контролирует высоту
+        layout.childControlWidth = false;   // FALSE - width controlled by anchors! childControlWidth=true breaks anchorMax!
         layout.childForceExpandHeight = false;
         layout.childForceExpandWidth = false;
         layout.childAlignment = TextAnchor.UpperCenter;

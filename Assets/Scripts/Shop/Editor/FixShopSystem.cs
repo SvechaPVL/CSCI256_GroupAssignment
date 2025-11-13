@@ -530,10 +530,10 @@ public class FixShopSystem : EditorWindow
         LayoutElement layoutElement = itemCard.AddComponent<LayoutElement>();
         layoutElement.minHeight = 120;
         layoutElement.preferredHeight = 120;
-        layoutElement.minWidth = -1;  // Не ограничивать минимальную ширину
-        layoutElement.preferredWidth = -1;  // Не задавать фиксированную ширину
+        layoutElement.minWidth = 400;  // Минимальная ширина
+        layoutElement.preferredWidth = 1000;  // Предпочитаемая ширина (будет растягиваться)
         layoutElement.flexibleHeight = 0;
-        layoutElement.flexibleWidth = 1;  // КРИТИЧНО: Растягивается на всю ширину!
+        layoutElement.flexibleWidth = 1;  // Растягивается чтобы заполнить доступную ширину
 
         // Назначаем ссылки
         ShopItemCard cardScript = itemCard.GetComponent<ShopItemCard>();

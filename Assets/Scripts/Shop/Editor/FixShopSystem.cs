@@ -27,6 +27,7 @@ public class FixShopSystem : EditorWindow
             "Этот скрипт:\n\n" +
             "✅ УДАЛИТ весь старый UI\n" +
             "✅ ПЕРЕСОЗДАСТ всё с нуля\n" +
+            "✅ НАСТРОИТ игрока (Currency, Inventory, Upgrades)\n" +
             "✅ АВТОНАЗНАЧИТ все shop items\n" +
             "✅ ИСПРАВИТ проблему с карточками\n" +
             "✅ НАСТРОИТ все ссылки автоматически\n\n" +
@@ -61,16 +62,19 @@ public class FixShopSystem : EditorWindow
         // ШАГ 2: Создаём новый UI с правильными настройками
         CreateNewUI();
 
-        // ШАГ 3: Находим или создаём ShopManager
+        // ШАГ 3: Настраиваем компоненты на игрока
+        SetupPlayerComponents();
+
+        // ШАГ 4: Находим или создаём ShopManager
         ShopManager manager = SetupShopManager();
 
-        // ШАГ 4: Автоматически находим и назначаем все shop items
+        // ШАГ 5: Автоматически находим и назначаем все shop items
         AssignAllShopItems(manager);
 
-        // ШАГ 5: Настраиваем ShopTrigger
+        // ШАГ 6: Настраиваем ShopTrigger
         SetupShopTrigger(manager);
 
-        // ШАГ 6: Сохраняем всё
+        // ШАГ 7: Сохраняем всё
         AssetDatabase.SaveAssets();
         AssetDatabase.Refresh();
 
@@ -81,6 +85,7 @@ public class FixShopSystem : EditorWindow
         EditorUtility.DisplayDialog("Успех! 🎉",
             "Магазин полностью пересоздан!\n\n" +
             "✅ UI создан\n" +
+            "✅ Игрок настроен (Currency, Inventory, Upgrades)\n" +
             "✅ ShopManager настроен\n" +
             "✅ Shop Items назначены\n" +
             "✅ ShopTrigger готов\n\n" +
@@ -736,6 +741,95 @@ public class FixShopSystem : EditorWindow
         }
 
         Debug.Log("  ✅ ShopTrigger настроен!");
+    }
+
+    private void SetupPlayerComponents()
+    {
+        Debug.Log("👤 Настраиваем компоненты на игрока...");
+
+        // Находим игрока по тегу
+        GameObject player = GameObject.FindGameObjectWithTag("Player");
+        if (player == null)
+        {
+            Debug.LogWarning("  ⚠️ Игрок с тегом 'Player' не найден!");
+            EditorUtility.DisplayDialog("Внимание",
+                "Игрок не найден!\n\n" +
+                "Убедитесь что у игрока есть тег 'Player'.",
+                "OK");
+            return;
+        }
+
+        Debug.Log($"  ✓ Найден игрок: {player.name}");
+
+        // Добавляем или проверяем PlayerCurrency
+        PlayerCurrency currency = player.GetComponent<PlayerCurrency>();
+        if (currency == null)
+        {
+            currency = player.AddComponent<PlayerCurrency>();
+            Debug.Log("  ✓ Добавлен PlayerCurrency");
+        }
+        else
+        {
+            Debug.Log("  ✓ PlayerCurrency уже есть");
+        }
+
+        // Настраиваем начальное количество скрапа
+        SerializedObject currencySO = new SerializedObject(currency);
+        currencySO.FindProperty("startingScrap").intValue = 100;
+        currencySO.ApplyModifiedProperties();
+
+        // Добавляем или проверяем PlayerInventory
+        PlayerInventory inventory = player.GetComponent<PlayerInventory>();
+        if (inventory == null)
+        {
+            inventory = player.AddComponent<PlayerInventory>();
+            Debug.Log("  ✓ Добавлен PlayerInventory");
+        }
+        else
+        {
+            Debug.Log("  ✓ PlayerInventory уже есть");
+        }
+
+        // Добавляем или проверяем PlayerUpgrades
+        PlayerUpgrades upgrades = player.GetComponent<PlayerUpgrades>();
+        if (upgrades == null)
+        {
+            upgrades = player.AddComponent<PlayerUpgrades>();
+            Debug.Log("  ✓ Добавлен PlayerUpgrades");
+        }
+        else
+        {
+            Debug.Log("  ✓ PlayerUpgrades уже есть");
+        }
+
+        // Проверяем PlayerHealth - должен быть публичным
+        PlayerHealth health = player.GetComponent<PlayerHealth>();
+        if (health != null)
+        {
+            Debug.Log("  ✓ PlayerHealth найден");
+
+            // Проверяем доступность поля currentHealth через рефлексию
+            System.Reflection.FieldInfo healthField = typeof(PlayerHealth).GetField("currentHealth",
+                System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+
+            if (healthField != null)
+            {
+                Debug.Log("  ✓ PlayerHealth.currentHealth публичен - всё готово для shop системы");
+            }
+            else
+            {
+                Debug.LogWarning("  ⚠️ PlayerHealth.currentHealth должен быть public для работы shop системы");
+            }
+        }
+        else
+        {
+            Debug.LogWarning("  ⚠️ PlayerHealth не найден на игроке");
+        }
+
+        // Помечаем игрока как изменённого
+        EditorUtility.SetDirty(player);
+
+        Debug.Log("  ✅ Компоненты игрока настроены!");
     }
 }
 #endif

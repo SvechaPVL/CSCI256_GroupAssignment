@@ -443,11 +443,11 @@ public class FixShopSystem : EditorWindow
         cardRect.anchorMin = new Vector2(0, 1);      // Привязка к верху
         cardRect.anchorMax = new Vector2(1, 1);      // Растягивается по ширине
         cardRect.pivot = new Vector2(0.5f, 1f);      // Pivot сверху
-        cardRect.sizeDelta = new Vector2(0, 120);    // Ширина 0 (растягивается), высота 120
+        cardRect.sizeDelta = new Vector2(1000, 120);    // Начальная ширина 1000, высота 120
 
-        // Background Image
+        // Background Image - ЯРКИЙ ЦВЕТ ДЛЯ ВИДИМОСТИ!
         Image cardImage = itemCard.AddComponent<Image>();
-        cardImage.color = new Color(0.2f, 0.3f, 0.4f, 1f);
+        cardImage.color = new Color(0.3f, 0.5f, 0.7f, 1f);  // Ярко-синий!
         cardImage.sprite = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/Background.psd");
         cardImage.type = Image.Type.Sliced;
         cardImage.raycastTarget = true;  // ВАЖНО для кликов!
@@ -480,7 +480,7 @@ public class FixShopSystem : EditorWindow
         iconRect.sizeDelta = new Vector2(100, 100);
         Image iconImage = icon.AddComponent<Image>();
         iconImage.sprite = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/UISprite.psd");
-        iconImage.color = new Color(0.7f, 0.7f, 0.7f, 1f);
+        iconImage.color = new Color(1f, 0.8f, 0.2f, 1f);  // ЯРКИЙ ОРАНЖЕВЫЙ!
 
         // Name
         GameObject nameText = new GameObject("NameText");

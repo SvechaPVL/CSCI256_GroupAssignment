@@ -243,10 +243,11 @@ public class ShopUICreator : EditorWindow
         VerticalLayoutGroup layout = content.AddComponent<VerticalLayoutGroup>();
         layout.spacing = 10;
         layout.padding = new RectOffset(10, 10, 10, 10);
-        layout.childControlHeight = false;
+        layout.childControlHeight = true;  // CHANGED: Enable height control
         layout.childControlWidth = true;
         layout.childForceExpandHeight = false;
         layout.childForceExpandWidth = true;
+        layout.childAlignment = TextAnchor.UpperCenter;
 
         ContentSizeFitter fitter = content.AddComponent<ContentSizeFitter>();
         fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
@@ -396,7 +397,11 @@ public class ShopUICreator : EditorWindow
         GameObject itemCard = new GameObject("ItemCard");
 
         RectTransform cardRect = itemCard.AddComponent<RectTransform>();
-        cardRect.sizeDelta = new Vector2(400, 100);
+        // CRITICAL: Set anchors for VerticalLayoutGroup compatibility
+        cardRect.anchorMin = new Vector2(0, 1);
+        cardRect.anchorMax = new Vector2(1, 1);
+        cardRect.pivot = new Vector2(0.5f, 1f);
+        cardRect.sizeDelta = new Vector2(0, 100); // Width will stretch, height fixed at 100
 
         Image cardImage = itemCard.AddComponent<Image>();
         cardImage.color = new Color(0.2f, 0.2f, 0.2f, 1f);
@@ -481,6 +486,8 @@ public class ShopUICreator : EditorWindow
         LayoutElement layoutElement = itemCard.AddComponent<LayoutElement>();
         layoutElement.minHeight = 100;
         layoutElement.preferredHeight = 100;
+        layoutElement.preferredWidth = 400; // CRITICAL: Set preferred width for ContentSizeFitter
+        layoutElement.flexibleWidth = 1; // Allow stretching to fill container
 
         // Assign references to ShopItemCard
         ShopItemCard cardScript = itemCard.GetComponent<ShopItemCard>();

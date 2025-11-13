@@ -271,6 +271,25 @@ public class ShopManager : MonoBehaviour
                 }
             }
 
+            // 🔍 DETAILED VISIBILITY DIAGNOSTICS
+            Debug.Log($"[ShopManager] 🔍 VISIBILITY DIAGNOSTICS:");
+            Debug.Log($"[ShopManager] Canvas active: {shopCanvas.gameObject.activeSelf}, Canvas.enabled: {shopCanvas.enabled}");
+            Debug.Log($"[ShopManager] ShopPanel active: {shopPanel.activeSelf}");
+            Debug.Log($"[ShopManager] ScrollView active: {scrollView.gameObject.activeSelf}");
+            Debug.Log($"[ShopManager] Viewport active: {viewport.gameObject.activeSelf}");
+            Debug.Log($"[ShopManager] Content active: {itemCardsContainer.gameObject.activeSelf}");
+
+            // Check viewport mask
+            UnityEngine.UI.Mask viewportMask = viewport.GetComponent<UnityEngine.UI.Mask>();
+            if (viewportMask != null)
+            {
+                Debug.Log($"[ShopManager] Viewport has Mask component: enabled={viewportMask.enabled}, showMaskGraphic={viewportMask.showMaskGraphic}");
+            }
+            else
+            {
+                Debug.LogWarning($"[ShopManager] Viewport has NO Mask component!");
+            }
+
             // Log positions after manual positioning
             Debug.Log($"[ShopManager] After manual positioning:");
             for (int i = 0; i < Mathf.Min(3, itemCardsContainer.childCount); i++)
@@ -279,6 +298,19 @@ public class ShopManager : MonoBehaviour
                 if (childRect != null)
                 {
                     Debug.Log($"[ShopManager] Card {i} - Position: {childRect.anchoredPosition}, AnchorMin: {childRect.anchorMin}, AnchorMax: {childRect.anchorMax}, Pivot: {childRect.pivot}, Size: {childRect.sizeDelta}");
+                    Debug.Log($"[ShopManager] Card {i} - Active: {childRect.gameObject.activeSelf}, WorldCorners: {string.Join(", ", childRect.GetWorldCorners())}");
+
+                    Image cardImage = childRect.GetComponent<Image>();
+                    if (cardImage != null)
+                    {
+                        Debug.Log($"[ShopManager] Card {i} Image - Enabled: {cardImage.enabled}, Color: {cardImage.color}, RaycastTarget: {cardImage.raycastTarget}");
+                    }
+
+                    CanvasGroup cg = childRect.GetComponent<CanvasGroup>();
+                    if (cg != null)
+                    {
+                        Debug.Log($"[ShopManager] Card {i} CanvasGroup - Alpha: {cg.alpha}, Interactable: {cg.interactable}, BlocksRaycasts: {cg.blocksRaycasts}");
+                    }
 
                     LayoutElement layoutElement = childRect.GetComponent<LayoutElement>();
                     if (layoutElement != null)

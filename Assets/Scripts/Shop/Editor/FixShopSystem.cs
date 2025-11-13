@@ -314,6 +314,7 @@ public class FixShopSystem : EditorWindow
         RectTransform detailRect = detailPanel.AddComponent<RectTransform>();
         detailRect.anchorMin = new Vector2(0.6f, 0);
         detailRect.anchorMax = new Vector2(1, 1);
+        detailRect.pivot = new Vector2(0.5f, 0.5f);
         detailRect.anchoredPosition = new Vector2(-50, -50);
         detailRect.sizeDelta = new Vector2(-100, -150);
 
@@ -327,6 +328,8 @@ public class FixShopSystem : EditorWindow
         RectTransform containerRect = container.AddComponent<RectTransform>();
         containerRect.anchorMin = Vector2.zero;
         containerRect.anchorMax = Vector2.one;
+        containerRect.pivot = new Vector2(0.5f, 0.5f);
+        containerRect.anchoredPosition = Vector2.zero;
         containerRect.sizeDelta = new Vector2(-40, -40);
 
         VerticalLayoutGroup layout = container.AddComponent<VerticalLayoutGroup>();
@@ -527,8 +530,10 @@ public class FixShopSystem : EditorWindow
         LayoutElement layoutElement = itemCard.AddComponent<LayoutElement>();
         layoutElement.minHeight = 120;
         layoutElement.preferredHeight = 120;
+        layoutElement.minWidth = -1;  // Не ограничивать минимальную ширину
+        layoutElement.preferredWidth = -1;  // Не задавать фиксированную ширину
         layoutElement.flexibleHeight = 0;
-        layoutElement.flexibleWidth = 1;  // Растягивается по ширине
+        layoutElement.flexibleWidth = 1;  // КРИТИЧНО: Растягивается на всю ширину!
 
         // Назначаем ссылки
         ShopItemCard cardScript = itemCard.GetComponent<ShopItemCard>();

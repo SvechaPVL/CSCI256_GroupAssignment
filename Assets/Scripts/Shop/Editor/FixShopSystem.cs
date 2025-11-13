@@ -285,7 +285,7 @@ public class FixShopSystem : EditorWindow
         VerticalLayoutGroup layout = content.AddComponent<VerticalLayoutGroup>();
         layout.spacing = 10;
         layout.padding = new RectOffset(10, 10, 10, 10);
-        layout.childControlHeight = true;   // TRUE - layout контролирует высоту
+        layout.childControlHeight = false;  // FALSE - BOTH child controls BREAK anchors! Manual positioning in ShopManager instead
         layout.childControlWidth = false;   // FALSE - width controlled by anchors! childControlWidth=true breaks anchorMax!
         layout.childForceExpandHeight = false;
         layout.childForceExpandWidth = false;

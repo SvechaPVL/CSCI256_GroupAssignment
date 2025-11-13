@@ -36,6 +36,7 @@ public class ShopManager : MonoBehaviour
 
     private List<ShopItemCard> itemCards = new List<ShopItemCard>();
     private ShopItem selectedItem;
+    private bool cardsCreated = false;
 
     private void Start()
     {
@@ -85,8 +86,8 @@ public class ShopManager : MonoBehaviour
             player = GameObject.FindGameObjectWithTag("Player");
         }
 
-        // Create item cards
-        CreateItemCards();
+        // DON'T create cards here - wait until shop is opened!
+        // Cards will be created in OpenShop() when ShopUI is active
     }
 
     private void OnDestroy()
@@ -353,8 +354,18 @@ public class ShopManager : MonoBehaviour
             promptUI.SetActive(false);
         }
 
-        // Refresh all cards
-        RefreshAllCards();
+        // Create cards on first open (lazy initialization)
+        if (!cardsCreated)
+        {
+            Debug.Log("[ShopManager] 🎨 Creating cards for the first time (ShopUI is now active)");
+            CreateItemCards();
+            cardsCreated = true;
+        }
+        else
+        {
+            // Refresh all cards
+            RefreshAllCards();
+        }
 
         // Hide detail panel initially
         if (detailPanel != null)
